@@ -24,17 +24,17 @@ public partial class MainPage : ContentPage
 		var area = db.ExecuteScalar<double>("SELECT ST_Area(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))'))"); // 50
 		var centroid = db.ExecuteScalar<string>("SELECT ST_AsText(ST_Centroid(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))')))"); // POINT(15 15)
 		db.CreateTable<SampleData>();
-		db.Insert(new SampleData { City = "Sydney", Geometry = "POINT(151.2093 -33.8688)" });
-		db.Insert(new SampleData { City = "New York", Geometry = "POINT(-74.0060 40.7128)" });
-		db.Insert(new SampleData { City = "Paris", Geometry = "POINT(2.3522 48.8566)" });
-		db.Insert(new SampleData { City = "Tokyo", Geometry = "POINT(139.6917 35.6895)" });
-		db.Insert(new SampleData { City = "Cairo", Geometry = "POINT(31.2357 30.0444)" });
-		db.Insert(new SampleData { City = "Rio de Janeiro", Geometry = "POINT(-43.1729 -22.9068)" });
-		db.Insert(new SampleData { City = "Moscow", Geometry = "POINT(37.6173 55.7558)" });
-		db.Insert(new SampleData { City = "London", Geometry = "POINT(-0.1276 51.5074)" });
-		db.Insert(new SampleData { City = "Beijing", Geometry = "POINT(116.4074 39.9042)" });
-		db.Insert(new SampleData { City = "Delhi", Geometry = "POINT(77.1025 28.7041)" });
-		db.Insert(new SampleData { City = "San Francisco", Geometry = "POINT(-122.4194 37.7749)" });
+		db.Insert(new SampleData { City = "Sydney", Color = "Red", Geometry = "POINT(151.2093 -33.8688)" });
+		db.Insert(new SampleData { City = "New York", Color = "Green", Geometry = "POINT(-74.0060 40.7128)" });
+		db.Insert(new SampleData { City = "Paris", Color = "Orange", Geometry = "POINT(2.3522 48.8566)" });
+		db.Insert(new SampleData { City = "Tokyo", Color = "Red", Geometry = "POINT(139.6917 35.6895)" });
+		db.Insert(new SampleData { City = "Cairo", Color = "Orange", Geometry = "POINT(31.2357 30.0444)" });
+		db.Insert(new SampleData { City = "Rio de Janeiro", Color = "Blue", Geometry = "POINT(-43.1729 -22.9068)" });
+		db.Insert(new SampleData { City = "Moscow", Color = "Green", Geometry = "POINT(37.6173 55.7558)" });
+		db.Insert(new SampleData { City = "London", Color = "Blue", Geometry = "POINT(-0.1276 51.5074)" });
+		db.Insert(new SampleData { City = "Beijing", Color = "Red", Geometry = "POINT(116.4074 39.9042)" });
+		db.Insert(new SampleData { City = "Delhi", Color = "Purple", Geometry = "POINT(77.1025 28.7041)" });
+		db.Insert(new SampleData { City = "San Francisco", Color = "Green", Geometry = "POINT(-122.4194 37.7749)" });
 		InitializeComponent();
 	}
 
@@ -48,17 +48,6 @@ public partial class MainPage : ContentPage
 		SKSurface surface = e.Surface;
 		SKCanvas canvas = surface.Canvas;
 		canvas.Clear();
-		db.Query<SampleData>("SELECT * FROM SampleData")
-			.ForEach(item =>
-		{
-			if (ST.GeomFromText(item.Geometry) is NetTopologySuite.Geometries.Point pt)
-			{
-				PointF viewPoint = new PointF(
-					(float)(canvasView.Width * ((180 + pt.X) / 360)),
-					(float)(canvasView.Height * ((90 - pt.Y) / 180)));
-				canvas.DrawCircle(viewPoint.X, viewPoint.Y, 5, new SKPaint { Color = SKColors.Black, IsAntialias = true });
-				canvas.DrawText(item.City, viewPoint.X + 12, viewPoint.Y + 12, new SKFont { Size = 12 }, new SKPaint { Color = SKColors.Black, IsAntialias = true });
-			}
-		});
+		canvas.DrawSampleData(db.Query<SampleData>("SELECT * FROM SampleData"), canvasView.Width, canvasView.Height);
 	}
 }

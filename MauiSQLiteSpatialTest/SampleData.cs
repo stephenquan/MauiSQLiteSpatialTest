@@ -11,6 +11,11 @@ public partial class SampleData
 	public string City { get; set; } = string.Empty;
 
 	/// <summary>
+	/// Gets or sets the color for visualization.
+	/// </summary>
+	public string Color { get; set; } = "Black";
+
+	/// <summary>
 	/// Gets or sets the geometry in WKT format.
 	/// </summary>
 	public string Geometry { get; set; } = string.Empty;
