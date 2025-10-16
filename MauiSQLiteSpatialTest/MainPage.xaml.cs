@@ -22,6 +22,7 @@ public partial class MainPage : ContentPage
 		db.UseSpatialExtensions();
 		var str = db.ExecuteScalar<string>("SELECT ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))')");
 		var area = db.ExecuteScalar<double>("SELECT ST_Area(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))'))"); // 50
+		var centroid = db.ExecuteScalar<string>("SELECT ST_AsText(ST_Centroid(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))')))"); // POINT(15 15)
 		db.CreateTable<SampleData>();
 		db.Insert(new SampleData { City = "Sydney", Geometry = "POINT(151.2093 -33.8688)" });
 		db.Insert(new SampleData { City = "New York", Geometry = "POINT(-74.0060 40.7128)" });

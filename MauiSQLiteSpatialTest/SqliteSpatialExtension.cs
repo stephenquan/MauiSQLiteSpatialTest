@@ -18,7 +18,12 @@ public static class SqliteSpatialExtensions
 	{
 		var dbHandle = db.Handle;
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_GeomFromText", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_GeomFromText);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_AsText", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_AsText);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Area", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Area);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Length", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Length);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Centroid", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Centroid);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_X", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_X);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Y", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Y);
 	}
 
 	/// <summary>
@@ -31,6 +36,15 @@ public static class SqliteSpatialExtensions
 		=> ST_StringFunction(ctx, user_data, args, (s) => ST.GeomFromText(s) is not null ? s : null);
 
 	/// <summary>
+	/// Implements the ST_AsText function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_AsText(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.AsText(g));
+
+	/// <summary>
 	/// Implements the ST_Area function for SQLite.
 	/// </summary>
 	/// <param name="ctx"></param>
@@ -38,6 +52,42 @@ public static class SqliteSpatialExtensions
 	/// <param name="args"></param>
 	static void ST_Area(sqlite3_context ctx, object user_data, sqlite3_value[] args)
 		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.Area(g));
+
+	/// <summary>
+	/// Implements the ST_Length function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_Length(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.Length(g));
+
+	/// <summary>
+	/// Implements the ST_Centroid function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_Centroid(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryFunction(ctx, user_data, args, (g) => (ST.Centroid(g) is NetTopologySuite.Geometries.Point p ? ST.AsText(p) : null));
+
+	/// <summary>
+	/// Implements the ST_X function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_X(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.X(g));
+
+	/// <summary>
+	/// Implements the ST_Y function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_Y(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.Y(g));
 
 	/// <summary>
 	/// Internal helper to handle string-based SQLite functions.
