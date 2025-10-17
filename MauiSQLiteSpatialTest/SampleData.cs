@@ -6,9 +6,9 @@
 public partial class SampleData
 {
 	/// <summary>
-	/// Gets or sets the city name.
+	/// Gets or sets the name.
 	/// </summary>
-	public string City { get; set; } = string.Empty;
+	public string Name { get; set; } = string.Empty;
 
 	/// <summary>
 	/// Gets or sets the color for visualization.

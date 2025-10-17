@@ -20,6 +20,7 @@ public static class SqliteSpatialExtensions
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_GeomFromText", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_GeomFromText);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_AsText", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_AsText);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Area", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Area);
+		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Buffer", 2, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Buffer);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Length", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Length);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_Centroid", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_Centroid);
 		SQLitePCL.raw.sqlite3_create_function(db.Handle, "ST_X", 1, SQLitePCL.raw.SQLITE_UTF8 | SQLitePCL.raw.SQLITE_DETERMINISTIC, null, ST_X);
@@ -52,6 +53,16 @@ public static class SqliteSpatialExtensions
 	/// <param name="args"></param>
 	static void ST_Area(sqlite3_context ctx, object user_data, sqlite3_value[] args)
 		=> ST_GeometryFunction(ctx, user_data, args, (g) => ST.Area(g));
+
+	/// <summary>
+	/// Implements the ST_Buffer function for SQLite.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	static void ST_Buffer(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+		=> ST_GeometryDoubleFunction(ctx, user_data, args,
+			(g, d) => g is not null && ST.Buffer(g, d) is NetTopologySuite.Geometries.Geometry b ? ST.AsText(b) : null);
 
 	/// <summary>
 	/// Implements the ST_Length function for SQLite.
@@ -96,7 +107,7 @@ public static class SqliteSpatialExtensions
 	/// <param name="user_data"></param>
 	/// <param name="args"></param>
 	/// <param name="func"></param>
-	static void ST_StringFunction(sqlite3_context ctx, object user_data, sqlite3_value[] args, Func<string, object?> func)
+	static void ST_StringFunction<T>(sqlite3_context ctx, object user_data, sqlite3_value[] args, Func<string, T?> func)
 	{
 		try
 		{
@@ -117,7 +128,7 @@ public static class SqliteSpatialExtensions
 	/// <param name="user_data"></param>
 	/// <param name="args"></param>
 	/// <param name="func"></param>
-	static void ST_GeometryFunction(sqlite3_context ctx, object user_data, sqlite3_value[] args, Func<Geometry?, object?> func)
+	static void ST_GeometryFunction<T>(sqlite3_context ctx, object user_data, sqlite3_value[] args, Func<Geometry?, T?> func)
 	{
 		try
 		{
@@ -126,6 +137,30 @@ public static class SqliteSpatialExtensions
 			WKTReader reader = new();
 			var geometry = reader.Read(wkt);
 			SetResult(ctx, func(geometry));
+		}
+		catch (Exception ex)
+		{
+			SetResultError(ctx, ex);
+		}
+	}
+
+	/// <summary>
+	/// Internal helper to handle geometry and double-based SQLite functions.
+	/// </summary>
+	/// <param name="ctx"></param>
+	/// <param name="user_data"></param>
+	/// <param name="args"></param>
+	/// <param name="func"></param>
+	static void ST_GeometryDoubleFunction(sqlite3_context ctx, object user_data, sqlite3_value[] args, Func<Geometry?, double, object?> func)
+	{
+		try
+		{
+			SQLitePCL.utf8z utf8z = raw.sqlite3_value_text(args[0]);
+			string wkt = utf8z.utf8_to_string();
+			double d = raw.sqlite3_value_double(args[1]);
+			WKTReader reader = new();
+			var geometry = reader.Read(wkt);
+			SetResult(ctx, func(geometry, d));
 		}
 		catch (Exception ex)
 		{
