@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using NetTopologySuite.IO;
+using SkiaSharp;
 using SkiaSharp.Views.Maui;
 
 namespace MauiSQLiteSpatialTest;
@@ -30,10 +31,18 @@ public static partial class SKCanvasExtensions
 	/// <param name="transform">The map extent of the SKCanvasView.</param>
 	public static void DrawSampleData(this SkiaSharp.SKCanvas canvas, SampleData sampleData, MapToViewTransform transform)
 	{
-		if (ST.GeomFromText(sampleData.Geometry) is NetTopologySuite.Geometries.Geometry geometry
-			&& Color.TryParse(sampleData.Color, out Color color))
+		try
 		{
-			DrawGeometry(canvas, sampleData.Name, color, geometry, transform);
+			if (!string.IsNullOrWhiteSpace(sampleData.Geometry)
+				&& new WKTReader() is WKTReader wktReader
+				&& wktReader.Read(sampleData.Geometry) is NetTopologySuite.Geometries.Geometry geometry
+				&& Color.TryParse(sampleData.Color, out Color color))
+			{
+				DrawGeometry(canvas, sampleData.Name, color, geometry, transform);
+			}
+		}
+		catch (Exception)
+		{
 		}
 	}
 

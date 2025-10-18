@@ -1,6 +1,7 @@
 ﻿using CsvHelper;
 using SkiaSharp;
 using SQLite;
+using SQuan.Helpers.SQLiteSpatial;
 
 namespace MauiSQLiteSpatialTest;
 
@@ -21,7 +22,7 @@ public class UsaCities : SampleData;
 /// </summary>
 public partial class MainPage : ContentPage
 {
-	SQLiteConnection db = new(":memory:");
+	SQLiteSpatialConnection db = new(":memory:");
 	MapToViewTransform transform = new();
 	NetTopologySuite.Geometries.Geometry? selection;
 	bool loaded = false;
@@ -37,20 +38,25 @@ public partial class MainPage : ContentPage
 
 	async Task PostInitialize()
 	{
-		// Spatially enable the SQLite database.
-		db.UseSpatialExtensions();
-
 		// Load sample spatial data from CSV files into the in-memory databases
 		await LoadFromCsv<UsaStates>(db, "usa_states.csv"); // all US states
 		await LoadFromCsv<UsaCities>(db, "usa_cities.csv"); // some US cities
 
 		// Do some test spatial queries
-		double area_50_units = db.ExecuteScalar<double>("SELECT ST_Area(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))'))");
-		var centroid_at_50_50 = db.ExecuteScalar<string>("SELECT ST_AsText(ST_Centroid(ST_GeomFromText('POLYGON((10 10,20 10,20 20,10 10))')))");
-		var circle_buffer = db.ExecuteScalar<string>("SELECT ST_AsText(ST_Buffer(ST_GeomFromText('POINT(10 10)'), 5))");
+		double? area_50_units = db.ExecuteScalar<double?>("SELECT ST_Area('POLYGON((10 10,20 10,20 20,10 10))')");
+		string? centroid_at_16_13 = db.ExecuteScalar<string?>("SELECT ST_Centroid('POLYGON((10 10,20 10,20 20,10 10))')");
+		string? circle_buffer = db.ExecuteScalar<string?>("SELECT ST_Buffer('POINT(10 10)', 5)");
+		double? distance_5_units = db.ExecuteScalar<double?>("SELECT ST_Distance('POINT(0 0)', 'POINT(3 4)')");
+
+		// Order the dataset with distances from Los Angeles.
+		var results = db.Query<SampleData>("SELECT * FROM UsaCities ORDER BY ST_Distance(Geometry, 'POINT(-118.243683 34.052235)')");
+		foreach (var result in results)
+		{
+			System.Diagnostics.Trace.WriteLine("City: " + result.Name);
+		}
 
 		// Create a selection 1.0 degree (111 km) buffer around Los Angeles, CA.
-		selection = ST.Buffer(ST.Point(-118.2437, 34.0522), 1.0);
+		selection = new NetTopologySuite.Geometries.Point(-118.2437, 34.0522).Buffer(1.0);
 
 		// Finalize loading.
 		loaded = true;
@@ -94,7 +100,6 @@ public partial class MainPage : ContentPage
 		SKCanvas canvas = surface.Canvas;
 		canvas.Clear();
 		canvas.DrawSampleData(db.Query<SampleData>("SELECT * FROM UsaStates"), transform);
-		//canvas.DrawSampleData(db.Query<SampleData>("SELECT '' as Name, 'Orange' as Color, ST_Buffer(Geometry, 1) as Geometry FROM UsaCities WHERE Name = 'Los Angeles,CA'"), transform);
 		if (selection is not null)
 		{
 			canvas.DrawGeometry("", Colors.Orange, selection, transform);
